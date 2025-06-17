@@ -1,0 +1,789 @@
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飛飛對對子：多合一互動學習遊戲</title>
+    <!-- 引入 Tailwind CSS CDN，用於快速排版和樣式設定 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Google Fonts 的 Inter 字體，提供清晰現代的文字顯示 -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        /* 整體網頁背景顏色和字體設定 */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fce4ec; /* 淺粉色背景，營造童趣氛圍 */
+            min-height: 100vh; /* 確保至少佔滿整個視窗高度 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem; /* 整體內邊距 */
+        }
+        /* 主要遊戲容器樣式 */
+        .main-game-container {
+            background-color: #ffffff;
+            border-radius: 2rem; /* 圓角 */
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15); /* 陰影 */
+            padding: 2rem;
+            max-width: 1000px; /* 最大寬度 */
+            width: 100%;
+            margin-top: 1rem;
+            flex-grow: 1; /* 讓容器填充可用空間 */
+            display: flex;
+            flex-direction: column;
+            position: relative; /* 用於內部絕對定位元素 */
+        }
+        /* 標題樣式 */
+        .game-title {
+            color: #d81b60; /* 深粉色 */
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+        }
+        /* 注音符號樣式 */
+        .zhuyin {
+            font-size: 0.65em;
+            color: #666;
+            display: block;
+            margin-top: 0.1em;
+        }
+
+        /* 導航按鈕樣式 */
+        .nav-button {
+            padding: 0.75rem 1.5rem;
+            font-size: 1.25rem;
+            font-weight: bold;
+            border-radius: 0.75rem;
+            background-color: #f48fb1; /* 淺粉色按鈕背景 */
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 0.5rem;
+        }
+        .nav-button:hover {
+            background-color: #ec407a; /* 深一點的粉色 */
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+        .nav-button.active {
+            background-color: #d81b60; /* 更深的粉色 */
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+            transform: translateY(0);
+        }
+
+        /* 遊戲區塊通用樣式 */
+        .game-section {
+            display: none; /* 預設隱藏所有遊戲區塊 */
+            padding: 1.5rem 0;
+            flex-grow: 1;
+            /* background-color: #fdfdfd; */
+            border-radius: 1.5rem;
+            /* box-shadow: inset 0 0 8px rgba(0,0,0,0.05); */
+        }
+        .game-section.active {
+            display: flex; /* 顯示當前活躍的遊戲區塊 */
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* ----- 遊戲 1: 字詞配對遊戲 (Word Matching Game) 樣式 ----- */
+        .wm-area {
+            background-color: #f0f0f0; /* 配對遊戲的淺灰背景 */
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+            width: 100%;
+        }
+        .wm-drag-item, .wm-drop-zone {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 1rem;
+            margin: 0.75rem 0;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 80px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #333;
+            border: 2px solid #ccc;
+            transition: all 0.2s ease-in-out;
+        }
+        .wm-drop-zone {
+            cursor: default;
+            background-color: #f0f0f0;
+            border-style: dashed;
+        }
+        .wm-drag-item:hover { transform: translateY(-3px); box-shadow: 0 6px 10px rgba(0, 0, 0, 0.15); }
+        .wm-dragging { opacity: 0.5; border: 2px dashed #007bff; }
+        .wm-correct-match { background-color: #c8e6c9; border-color: #4caf50; color: #1b5e20; cursor: default; }
+        .wm-matched { pointer-events: none; }
+        .wm-left-column { background-color: #e3f2fd; } /* 淺藍 */
+        .wm-right-column { background-color: #e0f2f7; } /* 淺綠 */
+
+        /* ----- 遊戲 2: 詞語造句遊戲 (Sentence Construction Game) 樣式 ----- */
+        .sc-container {
+            background-color: #f9fbe7; /* 造句遊戲的淺黃綠背景 */
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+            width: 100%;
+        }
+        .sc-sentence-box {
+            background-color: #e3f2fd; /* 淺藍色 */
+            border-radius: 1.25rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 1.8rem;
+            color: #1a237e;
+            font-weight: 600;
+        }
+        .sc-blank-slot {
+            display: inline-block;
+            background-color: #ffffff;
+            border: 2px dashed #90caf9;
+            border-radius: 0.5rem;
+            min-width: 150px;
+            min-height: 50px;
+            margin: 0 0.5rem;
+            vertical-align: middle;
+            text-align: center;
+            line-height: 50px;
+            transition: all 0.2s ease-in-out;
+            cursor: pointer;
+            color: transparent;
+        }
+        .sc-blank-slot.active { border-color: #42a5f5; background-color: #bbdefb; }
+        .sc-word-option {
+            background-color: #ffe0b2;
+            border-radius: 1rem;
+            padding: 0.75rem 1.5rem;
+            margin: 0.5rem;
+            cursor: grab;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #e65100;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .sc-word-option:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); }
+        .sc-dragging { opacity: 0.6; }
+        .sc-used { opacity: 0.4; cursor: default; pointer-events: none; background-color: #ccc; color: #666; }
+        .sc-correct-feedback { background-color: #c8e6c9; border-color: #4caf50; }
+        .sc-correct-feedback::before { content: '✅'; margin-right: 0.5rem; animation: pop 0.3s ease-out; }
+        .sc-incorrect-feedback { background-color: #ffcdd2; border-color: #f44336; }
+        .sc-incorrect-feedback::before { content: '❌'; margin-right: 0.5rem; animation: shake 0.3s ease-out; }
+        @keyframes pop { 0% { transform: scale(0); } 75% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+
+        /* ----- 遊戲 3: 詞語分類遊戲 (Word Categorization Game) 樣式 ----- */
+        .wc-container {
+            background-color: #f3e5f5; /* 分類遊戲的淺紫色背景 */
+            border-radius: 1.5rem;
+            padding: 2rem;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+            width: 100%;
+        }
+        .wc-category-zone {
+            background-color: #e8f5e9;
+            border-radius: 1.5rem;
+            padding: 1.5rem;
+            min-height: 180px;
+            border: 3px dashed #a5d6a7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            text-align: center;
+            transition: all 0.2s ease-in-out;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .wc-category-zone.gold { background-color: #fffde7; border-color: #ffe082; }
+        .wc-category-zone.person { background-color: #e3f2fd; border-color: #90caf9; }
+        .wc-category-zone.weather { background-color: #e0f2f7; border-color: #81d4fa; }
+        .wc-category-zone.emotion { background-color: #f8bbd0; border-color: #f06292; }
+        .wc-category-zone h3 { font-size: 2rem; font-weight: bold; margin-bottom: 1rem; color: #424242; }
+        .wc-category-zone.active { border-style: solid; border-width: 4px; transform: scale(1.02); }
+        .wc-word-card {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            padding: 0.75rem 1.5rem;
+            margin: 0.5rem;
+            cursor: grab;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .wc-word-card:hover { transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); }
+        .wc-dragging { opacity: 0.6; border: 2px dashed #007bff; }
+        .wc-matched { cursor: default; pointer-events: none; box-shadow: none; border: 1px solid #eee; background-color: #f0f0f0; color: #888; }
+
+
+        /* 通用回饋彈窗疊加層樣式 */
+        .feedback-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .feedback-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .feedback-content {
+            background-color: #fff;
+            padding: 3rem;
+            border-radius: 2rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .feedback-content.correct { color: #4caf50; }
+        .feedback-content.incorrect { color: #f44336; }
+        .completion-message {
+            background-color: #dcedc8;
+            color: #33691e;
+            padding: 1.5rem;
+            border-radius: 1.5rem;
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: bold;
+            margin-top: 2rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .wm-left-column, .wm-right-column,
+            .sc-sentence-box, .sc-word-option,
+            .wc-category-zone, .wc-word-card {
+                font-size: 1.2rem; /* Smaller font for mobile */
+                padding: 0.5rem 1rem;
+                min-height: 60px;
+            }
+            .zhuyin {
+                font-size: 0.55em;
+            }
+            .sc-blank-slot {
+                min-width: 100px;
+                min-height: 40px;
+                line-height: 40px;
+            }
+            .wc-category-zone h3 {
+                font-size: 1.5rem;
+            }
+            .feedback-content {
+                font-size: 1.5rem;
+                padding: 2rem;
+            }
+            .completion-message {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center">
+    <div class="main-game-container">
+        <h1 class="game-title text-4xl font-extrabold text-center">
+            飛飛對對子：多合一互動學習遊戲
+        </h1>
+
+        <!-- 導航按鈕區塊 -->
+        <div class="flex flex-wrap justify-center mb-6">
+            <button class="nav-button active" data-game="matching">字詞配對遊戲</button>
+            <button class="nav-button" data-game="sentence">詞語造句遊戲</button>
+            <button class="nav-button" data-game="categorization">詞語分類遊戲</button>
+        </div>
+
+        <!-- 遊戲區塊容器 -->
+        <div id="game-sections-wrapper" class="flex-grow w-full">
+            <!-- Game 1: 字詞配對遊戲 (Word Matching Game) -->
+            <div id="game-matching" class="game-section active">
+                <h2 class="text-3xl font-bold text-center text-blue-700 mb-6">字詞配對遊戲</h2>
+                <div class="wm-area grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- 左欄：生字 (Characters) -->
+                    <div id="wm-left-column" class="flex flex-col items-center p-4 wm-left-column rounded-xl shadow-inner">
+                        <h3 class="text-2xl font-bold text-blue-800 mb-4">生字</h3>
+                        <div class="wm-drag-item" draggable="true" data-word="雞">雞<span class="zhuyin">(ㄐㄧ)</span></div>
+                        <div class="wm-drag-item" draggable="true" data-word="難">難<span class="zhuyin">(ㄋㄢˊ)</span></div>
+                        <div class="wm-drag-item" draggable="true" data-word="對">對<span class="zhuyin">(ㄉㄨㄟˋ)</span></div>
+                        <div class="wm-drag-item" draggable="true" data-word="百">百<span class="zhuyin">(ㄅㄞˇ)</span></div>
+                        <div class="wm-drag-item" draggable="true" data-word="千">千<span class="zhuyin">(ㄑㄧㄢ)</span></div>
+                        <div class="wm-drag-item" draggable="true" data-word="萬">萬<span class="zhuyin">(ㄨㄢˋ)</span></div>
+                        <div class="wm-drag-item" draggable="true" data-word="霧">霧<span class="zhuyin">(ㄨˋ)</span></div>
+                        <div class="wm-drag-item" draggable="true" data-word="畫">畫<span class="zhuyin">(ㄏㄨㄚˋ)</span></div>
+                    </div>
+                    <!-- 右欄：詞語 (Words/Phrases) -->
+                    <div id="wm-right-column" class="flex flex-col items-center p-4 wm-right-column rounded-xl shadow-inner">
+                        <h3 class="text-2xl font-bold text-green-800 mb-4">詞語</h3>
+                        <div class="wm-drop-zone" data-match="雞">公雞<span class="zhuyin">(ㄍㄨㄥ ㄐㄧ)</span></div>
+                        <div class="wm-drop-zone" data-match="難">困難<span class="zhuyin">(ㄎㄨㄣˋ ㄋㄢˊ)</span></div>
+                        <div class="wm-drop-zone" data-match="對">對不起<span class="zhuyin">(ㄉㄨㄟˋ ㄅㄨˋ ㄑㄧˇ)</span></div>
+                        <div class="wm-drop-zone" data-match="百">四百元<span class="zhuyin">(ㄙˋ ㄅㄞˇ ㄩㄢˊ)</span></div>
+                        <div class="wm-drop-zone" data-match="千">千金<span class="zhuyin">(ㄑㄧㄢ ㄐㄧㄣ)</span></div>
+                        <div class="wm-drop-zone" data-match="萬">萬一<span class="zhuyin">(ㄨㄢˋ ㄧ)</span></div>
+                        <div class="wm-drop-zone" data-match="霧">起霧<span class="zhuyin">(ㄑㄧˇ ㄨˋ)</span></div>
+                        <div class="wm-drop-zone" data-match="畫">畫家<span class="zhuyin">(ㄏㄨㄚˋ ㄐㄧㄚ)</span></div>
+                    </div>
+                </div>
+                <div id="wm-feedback-message" class="mt-8 text-center text-3xl font-bold text-purple-700 hidden">
+                    太棒了！你完成了所有配對！
+                </div>
+            </div>
+
+            <!-- Game 2: 詞語造句遊戲 (Sentence Construction Game) -->
+            <div id="game-sentence" class="game-section">
+                <h2 class="text-3xl font-bold text-center text-purple-700 mb-6">詞語造句遊戲</h2>
+                <div class="sc-container flex flex-col items-center">
+                    <div id="sc-sentences-area" class="w-full">
+                        <div class="sc-sentence-box" data-correct-word="四百元" data-sentence-id="s1">
+                            我有<span class="sc-blank-slot" data-blank-id="b1"></span>。
+                        </div>
+                        <div class="sc-sentence-box" data-correct-word="起霧" data-sentence-id="s2">
+                            天氣很冷，而且<span class="sc-blank-slot" data-blank-id="b2"></span>了。
+                        </div>
+                        <div class="sc-sentence-box" data-correct-word="對不起" data-sentence-id="s3">
+                            我做錯了事，要說<span class="sc-blank-slot" data-blank-id="b3"></span>。
+                        </div>
+                        <div class="sc-sentence-box" data-correct-word="畫家" data-sentence-id="s4">
+                            他是一位<span class="sc-blank-slot" data-blank-id="b4"></span>，每天都在畫圖。
+                        </div>
+                    </div>
+                    <div id="sc-word-options" class="flex flex-wrap justify-center mt-8 p-4 bg-gray-100 rounded-xl shadow-inner">
+                        <div class="sc-word-option" draggable="true" data-word="四百元">四百元<span class="zhuyin">(ㄙˋ ㄅㄞˇ ㄩㄢˊ)</span></div>
+                        <div class="sc-word-option" draggable="true" data-word="千金">千金<span class="zhuyin">(ㄑㄧㄢ ㄐㄧㄣ)</span></div>
+                        <div class="sc-word-option" draggable="true" data-word="起霧">起霧<span class="zhuyin">(ㄑㄧˇ ㄨˋ)</span></div>
+                        <div class="sc-word-option" draggable="true" data-word="對不起">對不起<span class="zhuyin">(ㄉㄨㄟˋ ㄅㄨˋ ㄑㄧˇ)</span></div>
+                        <div class="sc-word-option" draggable="true" data-word="畫家">畫家<span class="zhuyin">(ㄏㄨㄚˋ ㄐㄧㄚ)</span></div>
+                    </div>
+                    <div id="sc-completion-message" class="mt-8 text-center text-3xl font-bold text-green-700 hidden">
+                        恭喜你！所有句子都完成了！🎉
+                    </div>
+                </div>
+            </div>
+
+            <!-- Game 3: 詞語分類遊戲 (Word Categorization Game) -->
+            <div id="game-categorization" class="game-section">
+                <h2 class="text-3xl font-bold text-center text-pink-700 mb-6">詞語分類遊戲</h2>
+                <div class="wc-container flex flex-col items-center">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full mb-8">
+                        <div id="wc-gold-category" class="wc-category-zone gold" data-category="金錢類">
+                            <h3>💰 金錢類</h3>
+                            <img src="https://placehold.co/80x80/ffe082/673ab7?text=錢" alt="金錢圖案" class="absolute top-4 right-4 opacity-30">
+                        </div>
+                        <div id="wc-person-category" class="wc-category-zone person" data-category="人物類">
+                            <h3>👥 人物類</h3>
+                            <img src="https://placehold.co/80x80/c8e6c9/2e7d32?text=人" alt="人物圖案" class="absolute top-4 right-4 opacity-30">
+                        </div>
+                        <div id="wc-weather-category" class="wc-category-zone weather" data-category="天氣類">
+                            <h3>🌦 天氣類</h3>
+                            <img src="https://placehold.co/80x80/e1f5fe/1976d2?text=天氣" alt="天氣圖案" class="absolute top-4 right-4 opacity-30">
+                        </div>
+                        <div id="wc-emotion-category" class="wc-category-zone emotion" data-category="情緒/行為類">
+                            <h3>🧠 情緒/行為類</h3>
+                            <img src="https://placehold.co/80x80/bbdefb/0d47a1?text=思考" alt="情緒圖案" class="absolute top-4 right-4 opacity-30">
+                        </div>
+                    </div>
+                    <div id="wc-word-cards-area" class="flex flex-wrap justify-center p-4 bg-gray-100 rounded-xl shadow-inner w-full">
+                        <div class="wc-word-card" draggable="true" data-word="四百元" data-category-type="金錢類">四百元<span class="zhuyin">(ㄙˋ ㄅㄞˇ ㄩㄢˊ)</span></div>
+                        <div class="wc-word-card" draggable="true" data-word="千金" data-category-type="金錢類">千金<span class="zhuyin">(ㄑㄧㄢ ㄐㄧㄣ)</span></div>
+                        <div class="wc-word-card" draggable="true" data-word="畫家" data-category-type="人物類">畫家<span class="zhuyin">(ㄏㄨㄚˋ ㄐㄧㄚ)</span></div>
+                        <div class="wc-word-card" draggable="true" data-word="公雞" data-category-type="人物類">公雞<span class="zhuyin">(ㄍㄨㄥ ㄐㄧ)</span></div>
+                        <div class="wc-word-card" draggable="true" data-word="起霧" data-category-type="天氣類">起霧<span class="zhuyin">(ㄑㄧˇ ㄨˋ)</span></div>
+                        <div class="wc-word-card" draggable="true" data-word="困難" data-category-type="情緒/行為類">困難<span class="zhuyin">(ㄎㄨㄣˋ ㄋㄢˊ)</span></div>
+                        <div class="wc-word-card" draggable="true" data-word="對不起" data-category-type="情緒/行為類">對不起<span class="zhuyin">(ㄉㄨㄟˋ ㄅㄨˋ ㄑㄧˇ)</span></div>
+                        <div class="wc-word-card" draggable="true" data-word="萬一" data-category-type="情緒/行為類">萬一<span class="zhuyin">(ㄨㄢˋ ㄧ)</span></div>
+                    </div>
+                    <div id="wc-completion-message" class="completion-message hidden">
+                        太棒了！所有詞語都分類正確！🎉
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通用回饋彈窗疊加層，所有遊戲共用 -->
+    <div id="global-feedback-overlay" class="feedback-overlay">
+        <div id="global-feedback-content" class="feedback-content"></div>
+    </div>
+
+    <script>
+        // 通用函數：顯示回饋彈窗
+        function showGlobalFeedback(message, isCorrect) {
+            const overlay = document.getElementById('global-feedback-overlay');
+            const content = document.getElementById('global-feedback-content');
+            content.textContent = message;
+            content.classList.remove('correct', 'incorrect');
+            if (isCorrect) {
+                content.classList.add('correct');
+            } else {
+                content.classList.add('incorrect');
+            }
+            overlay.classList.add('show');
+
+            setTimeout(() => {
+                overlay.classList.remove('show');
+            }, 1500); // 顯示 1.5 秒
+        }
+
+        // --- 導航及遊戲切換邏輯 ---
+        const navButtons = document.querySelectorAll('.nav-button');
+        const gameSections = document.querySelectorAll('.game-section');
+
+        navButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const gameToShow = button.dataset.game;
+
+                // 移除所有按鈕的 active 樣式
+                navButtons.forEach(btn => btn.classList.remove('active'));
+                // 為當前點擊的按鈕添加 active 樣式
+                button.classList.add('active');
+
+                // 隱藏所有遊戲區塊
+                gameSections.forEach(section => section.classList.remove('active'));
+                // 顯示對應的遊戲區塊
+                document.getElementById(`game-${gameToShow}`).classList.add('active');
+            });
+        });
+
+        // --- 遊戲 1: 字詞配對遊戲 (Word Matching Game) 邏輯 ---
+        function initWordMatchingGame() {
+            let draggedItemWM = null;
+            let matchedPairsWM = 0;
+            const totalPairsWM = 8;
+            const gameAreaWM = document.getElementById('game-matching'); // 確保在正確的遊戲區塊內查找
+
+            // 重置遊戲狀態（當頁面加載或切換回來時）
+            const leftColumn = gameAreaWM.querySelector('#wm-left-column');
+            const rightColumn = gameAreaWM.querySelector('#wm-right-column');
+            const originalLeftItems = [
+                { word: '雞', text: '雞<span class="zhuyin">(ㄐㄧ)</span>' },
+                { word: '難', text: '難<span class="zhuyin">(ㄋㄢˊ)</span>' },
+                { word: '對', text: '對<span class="zhuyin">(ㄉㄨㄟˋ)</span>' },
+                { word: '百', text: '百<span class="zhuyin">(ㄅㄞˇ)</span>' },
+                { word: '千', text: '千<span class="zhuyin">(ㄑㄧㄢ)</span>' },
+                { word: '萬', text: '萬<span class="zhuyin">(ㄨㄢˋ)</span>' },
+                { word: '霧', text: '霧<span class="zhuyin">(ㄨˋ)</span>' },
+                { word: '畫', text: '畫<span class="zhuyin">(ㄏㄨㄚˋ)</span>' }
+            ];
+            const originalRightItems = [
+                { match: '雞', text: '公雞<span class="zhuyin">(ㄍㄨㄥ ㄐㄧ)</span>' },
+                { match: '難', text: '困難<span class="zhuyin">(ㄎㄨㄣˋ ㄋㄢˊ)</span>' },
+                { match: '對', text: '對不起<span class="zhuyin">(ㄉㄨㄟˋ ㄅㄨˋ ㄑㄧˇ)</span>' },
+                { match: '百', text: '四百元<span class="zhuyin">(ㄙˋ ㄅㄞˇ ㄩㄢˊ)</span>' },
+                { match: '千', text: '千金<span class="zhuyin">(ㄑㄧㄢ ㄐㄧㄣ)</span>' },
+                { match: '萬', text: '萬一<span class="zhuyin">(ㄨㄢˋ ㄧ)</span>' },
+                { match: '霧', text: '起霧<span class="zhuyin">(ㄑㄧˇ ㄨˋ)</span>' },
+                { match: '畫', text: '畫家<span class="zhuyin">(ㄏㄨㄚˋ ㄐㄧㄚ)</span>' }
+            ];
+
+            // 清空並重新填充元素以重置狀態
+            leftColumn.innerHTML = '<h3 class="text-2xl font-bold text-blue-800 mb-4">生字</h3>';
+            rightColumn.innerHTML = '<h3 class="text-2xl font-bold text-green-800 mb-4">詞語</h3>';
+
+            originalLeftItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'wm-drag-item';
+                div.draggable = true;
+                div.dataset.word = item.word;
+                div.innerHTML = item.text;
+                leftColumn.appendChild(div);
+            });
+
+            originalRightItems.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'wm-drop-zone';
+                div.dataset.match = item.match;
+                div.innerHTML = item.text;
+                rightColumn.appendChild(div);
+            });
+
+            matchedPairsWM = 0;
+            gameAreaWM.querySelector('#wm-feedback-message').classList.add('hidden');
+
+
+            gameAreaWM.querySelectorAll('.wm-drag-item').forEach(item => {
+                item.addEventListener('dragstart', (e) => {
+                    draggedItemWM = e.target;
+                    e.target.classList.add('wm-dragging');
+                });
+                item.addEventListener('dragend', (e) => {
+                    e.target.classList.remove('wm-dragging');
+                });
+            });
+
+            gameAreaWM.querySelectorAll('.wm-drop-zone').forEach(zone => {
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (!zone.classList.contains('wm-matched')) {
+                         zone.classList.add('border-blue-500');
+                    }
+                });
+                zone.addEventListener('dragleave', (e) => {
+                    zone.classList.remove('border-blue-500');
+                });
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('border-blue-500');
+
+                    if (draggedItemWM && !zone.classList.contains('wm-matched')) {
+                        const dragWord = draggedItemWM.dataset.word;
+                        const dropMatch = zone.dataset.match;
+
+                        if (dragWord === dropMatch) {
+                            zone.classList.add('wm-correct-match', 'wm-matched');
+                            draggedItemWM.classList.add('wm-correct-match', 'wm-matched');
+                            zone.innerHTML = draggedItemWM.innerHTML; // Copy content
+                            draggedItemWM.remove(); // Remove original
+                            showGlobalFeedback('正確！', true);
+                            matchedPairsWM++;
+                            if (matchedPairsWM === totalPairsWM) {
+                                gameAreaWM.querySelector('#wm-feedback-message').classList.remove('hidden');
+                            }
+                        } else {
+                            showGlobalFeedback('不對喔！再試一次。', false);
+                            zone.style.backgroundColor = '#ffcdd2';
+                            setTimeout(() => { zone.style.backgroundColor = '#f0f0f0'; }, 500);
+                        }
+                        draggedItemWM = null;
+                    }
+                });
+            });
+        }
+
+        // --- 遊戲 2: 詞語造句遊戲 (Sentence Construction Game) 邏輯 ---
+        function initSentenceConstructionGame() {
+            let draggedWordSC = null;
+            const correctAnswersSC = {
+                's1': '四百元', 's2': '起霧', 's3': '對不起', 's4': '畫家'
+            };
+            const completedSentencesSC = new Set();
+            const gameAreaSC = document.getElementById('game-sentence');
+
+            // 重置遊戲狀態
+            const scSentencesArea = gameAreaSC.querySelector('#sc-sentences-area');
+            const scWordOptionsArea = gameAreaSC.querySelector('#sc-word-options');
+
+            scSentencesArea.innerHTML = `
+                <div class="sc-sentence-box" data-correct-word="四百元" data-sentence-id="s1">
+                    我有<span class="sc-blank-slot" data-blank-id="b1"></span>。
+                </div>
+                <div class="sc-sentence-box" data-correct-word="起霧" data-sentence-id="s2">
+                    天氣很冷，而且<span class="sc-blank-slot" data-blank-id="b2"></span>了。
+                </div>
+                <div class="sc-sentence-box" data-correct-word="對不起" data-sentence-id="s3">
+                    我做錯了事，要說<span class="sc-blank-slot" data-blank-id="b3"></span>。
+                </div>
+                <div class="sc-sentence-box" data-correct-word="畫家" data-sentence-id="s4">
+                    他是一位<span class="sc-blank-slot" data-blank-id="b4"></span>，每天都在畫圖。
+                </div>
+            `;
+            scWordOptionsArea.innerHTML = `
+                <div class="sc-word-option" draggable="true" data-word="四百元">四百元<span class="zhuyin">(ㄙˋ ㄅㄞˇ ㄩㄢˊ)</span></div>
+                <div class="sc-word-option" draggable="true" data-word="千金">千金<span class="zhuyin">(ㄑㄧㄢ ㄐㄧㄣ)</span></div>
+                <div class="sc-word-option" draggable="true" data-word="起霧">起霧<span class="zhuyin">(ㄑㄧˇ ㄨˋ)</span></div>
+                <div class="sc-word-option" draggable="true" data-word="對不起">對不起<span class="zhuyin">(ㄉㄨㄟˋ ㄅㄨˋ ㄑㄧˇ)</span></div>
+                <div class="sc-word-option" draggable="true" data-word="畫家">畫家<span class="zhuyin">(ㄏㄨㄚˋ ㄐㄧㄚ)</span></div>
+            `;
+            completedSentencesSC.clear();
+            gameAreaSC.querySelector('#sc-completion-message').classList.add('hidden');
+
+
+            gameAreaSC.querySelectorAll('.sc-word-option').forEach(option => {
+                option.addEventListener('dragstart', (e) => {
+                    draggedWordSC = e.target.dataset.word;
+                    e.target.classList.add('sc-dragging');
+                });
+                option.addEventListener('dragend', (e) => {
+                    e.target.classList.remove('sc-dragging');
+                });
+            });
+
+            gameAreaSC.querySelectorAll('.sc-blank-slot').forEach(slot => {
+                slot.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    if (!slot.textContent.trim()) {
+                        slot.classList.add('active');
+                    }
+                });
+                slot.addEventListener('dragleave', (e) => {
+                    slot.classList.remove('active');
+                });
+                slot.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    slot.classList.remove('active');
+
+                    if (draggedWordSC && !slot.textContent.trim()) {
+                        const parentSentenceId = slot.closest('.sc-sentence-box').dataset.sentenceId;
+                        const correctWord = correctAnswersSC[parentSentenceId];
+
+                        if (draggedWordSC === correctWord) {
+                            slot.textContent = draggedWordSC;
+                            slot.style.color = '#1a237e';
+                            slot.classList.remove('border-dashed', 'border-blue-300');
+                            slot.classList.add('sc-correct-feedback');
+                            slot.style.cursor = 'default';
+                            slot.style.borderColor = '#4caf50';
+
+                            const usedOption = gameAreaSC.querySelector(`.sc-word-option[data-word="${draggedWordSC}"]`);
+                            if (usedOption) {
+                                usedOption.classList.add('sc-used');
+                                usedOption.draggable = false;
+                            }
+
+                            completedSentencesSC.add(parentSentenceId);
+                            showGlobalFeedback('正確！', true);
+                            checkAllSentencesCompletedSC();
+                        } else {
+                            showGlobalFeedback('不對喔！再試一次。', false);
+                            slot.classList.add('sc-incorrect-feedback');
+                            setTimeout(() => { slot.classList.remove('sc-incorrect-feedback'); }, 800);
+                        }
+                        draggedWordSC = null;
+                    }
+                });
+            });
+
+            function checkAllSentencesCompletedSC() {
+                if (completedSentencesSC.size === Object.keys(correctAnswersSC).length) {
+                    gameAreaSC.querySelector('#sc-completion-message').classList.remove('hidden');
+                }
+            }
+        }
+
+        // --- 遊戲 3: 詞語分類遊戲 (Word Categorization Game) 邏輯 ---
+        function initWordCategorizationGame() {
+            let draggedCardWC = null;
+            let matchedCardsCountWC = 0;
+            const totalCardsWC = 8;
+            const gameAreaWC = document.getElementById('game-categorization');
+
+            // 重置遊戲狀態
+            const wcCategoriesContainer = gameAreaWC.querySelector('.grid.gap-6');
+            const wcWordCardsArea = gameAreaWC.querySelector('#wc-word-cards-area');
+
+            wcCategoriesContainer.innerHTML = `
+                <div id="wc-gold-category" class="wc-category-zone gold" data-category="金錢類">
+                    <h3>💰 金錢類</h3>
+                    <img src="https://placehold.co/80x80/ffe082/673ab7?text=錢" alt="金錢圖案" class="absolute top-4 right-4 opacity-30">
+                </div>
+                <div id="wc-person-category" class="wc-category-zone person" data-category="人物類">
+                    <h3>👥 人物類</h3>
+                    <img src="https://placehold.co/80x80/c8e6c9/2e7d32?text=人" alt="人物圖案" class="absolute top-4 right-4 opacity-30">
+                </div>
+                <div id="wc-weather-category" class="wc-category-zone weather" data-category="天氣類">
+                    <h3>🌦 天氣類</h3>
+                    <img src="https://placehold.co/80x80/e1f5fe/1976d2?text=天氣" alt="天氣圖案" class="absolute top-4 right-4 opacity-30">
+                </div>
+                <div id="wc-emotion-category" class="wc-category-zone emotion" data-category="情緒/行為類">
+                    <h3>🧠 情緒/行為類</h3>
+                    <img src="https://placehold.co/80x80/bbdefb/0d47a1?text=思考" alt="情緒圖案" class="absolute top-4 right-4 opacity-30">
+                </div>
+            `;
+            wcWordCardsArea.innerHTML = `
+                <div class="wc-word-card" draggable="true" data-word="四百元" data-category-type="金錢類">四百元<span class="zhuyin">(ㄙˋ ㄅㄞˇ ㄩㄢˊ)</span></div>
+                <div class="wc-word-card" draggable="true" data-word="千金" data-category-type="金錢類">千金<span class="zhuyin">(ㄑㄧㄢ ㄐㄧㄣ)</span></div>
+                <div class="wc-word-card" draggable="true" data-word="畫家" data-category-type="人物類">畫家<span class="zhuyin">(ㄏㄨㄚˋ ㄐㄧㄚ)</span></div>
+                <div class="wc-word-card" draggable="true" data-word="公雞" data-category-type="人物類">公雞<span class="zhuyin">(ㄍㄨㄥ ㄐㄧ)</span></div>
+                <div class="wc-word-card" draggable="true" data-word="起霧" data-category-type="天氣類">起霧<span class="zhuyin">(ㄑㄧˇ ㄨˋ)</span></div>
+                <div class="wc-word-card" draggable="true" data-word="困難" data-category-type="情緒/行為類">困難<span class="zhuyin">(ㄎㄨㄣˋ ㄋㄢˊ)</span></div>
+                <div class="wc-word-card" draggable="true" data-word="對不起" data-category-type="情緒/行為類">對不起<span class="zhuyin">(ㄉㄨㄟˋ ㄅㄨˋ ㄑㄧˇ)</span></div>
+                <div class="wc-word-card" draggable="true" data-word="萬一" data-category-type="情緒/行為類">萬一<span class="zhuyin">(ㄨㄢˋ ㄧ)</span></div>
+            `;
+            matchedCardsCountWC = 0;
+            gameAreaWC.querySelector('#wc-completion-message').classList.add('hidden');
+
+
+            gameAreaWC.querySelectorAll('.wc-word-card').forEach(card => {
+                card.addEventListener('dragstart', (e) => {
+                    draggedCardWC = e.target;
+                    e.target.classList.add('wc-dragging');
+                });
+                card.addEventListener('dragend', (e) => {
+                    e.target.classList.remove('wc-dragging');
+                });
+            });
+
+            gameAreaWC.querySelectorAll('.wc-category-zone').forEach(zone => {
+                zone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    zone.classList.add('active');
+                });
+                zone.addEventListener('dragleave', (e) => {
+                    zone.classList.remove('active');
+                });
+                zone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    zone.classList.remove('active');
+
+                    if (draggedCardWC) {
+                        const cardCategory = draggedCardWC.dataset.categoryType;
+                        const zoneCategory = zone.dataset.category;
+
+                        if (cardCategory === zoneCategory) {
+                            zone.appendChild(draggedCardWC);
+                            draggedCardWC.classList.remove('wc-dragging');
+                            draggedCardWC.classList.add('wc-matched');
+                            showGlobalFeedback('正確！', true);
+                            matchedCardsCountWC++;
+                            checkAllCardsCategorizedWC();
+                        } else {
+                            showGlobalFeedback('不對喔！再試一次。', false);
+                            zone.style.transform = 'scale(0.98)';
+                            setTimeout(() => { zone.style.transform = 'scale(1)'; }, 300);
+                        }
+                        draggedCardWC = null;
+                    }
+                });
+            });
+
+            function checkAllCardsCategorizedWC() {
+                if (matchedCardsCountWC === totalCardsWC) {
+                    gameAreaWC.querySelector('#wc-completion-message').classList.remove('hidden');
+                }
+            }
+        }
+
+        // 頁面加載完成後，初始化所有遊戲（並顯示第一個遊戲）
+        document.addEventListener('DOMContentLoaded', () => {
+            // 初始化所有遊戲（但只顯示第一個）
+            initWordMatchingGame();
+            initSentenceConstructionGame();
+            initWordCategorizationGame();
+
+            // 確保一開始就顯示第一個遊戲區塊
+            document.getElementById('game-matching').classList.add('active');
+            document.querySelector('.nav-button[data-game="matching"]').classList.add('active');
+        });
+    </script>
+</body>
+</html>
